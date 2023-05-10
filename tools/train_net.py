@@ -18,9 +18,10 @@ from detectron2.evaluation import (
 
 # updated code
 from src.config import get_cfg
-from src import data
+#from src import data
 from src.engine import default_argument_parser, DefaultTrainer
-from src import modeling
+#from src import modeling
+
 
 
 class Trainer(DefaultTrainer):

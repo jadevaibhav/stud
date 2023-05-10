@@ -32,7 +32,7 @@ import logging
 import os
 from collections import OrderedDict
 
-from ..data import build_detection_train_loader, PairDataLoader, PairFixDataLoader, PairAllDataLoader, PairMultirandomDataLoader, PairDataIntervalLoader
+from ..data import build_detection_train_loader #, PairDataLoader, PairFixDataLoader, PairAllDataLoader, PairMultirandomDataLoader, PairDataIntervalLoader
 # from detectron2.evaluation.evaluator import inference_on_dataset
 # from .evaluator import inference_on_dataset
 
