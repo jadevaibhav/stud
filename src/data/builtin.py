@@ -6,7 +6,7 @@ from collections import defaultdict
 from detectron2.data import DatasetCatalog
 from .coco import register_coco_instances  # use customized data register
 
-GPU=0
+GPU=1
 
 if GPU==0:
     __all__ = [
@@ -172,33 +172,33 @@ if GPU==0:
 
 
     # ===== register vanilla coco dataset ====
-    from detectron2.data import MetadataCatalog
-    def register_all_coco(dataset_dir='/nobackup-slow/dataset/my_xfdu/coco2017'):
-        thing_classes = MetadataCatalog.get('coco_2017_train').thing_classes
-        metadata = {"thing_classes": thing_classes}
-        train_json_annotations = os.path.join(
-            dataset_dir, 'annotations', 'instances_train2017.json')
-        test_json_annotations = os.path.join(
-            dataset_dir, 'annotations', 'instances_val2017.json')
-        train_image_dir = os.path.join(dataset_dir, 'train2017')
-        test_image_dir = os.path.join(dataset_dir, 'val2017')
-        register_coco_instances('coco_2017_train_custom', metadata,
-                                train_json_annotations,
-                                train_image_dir)
-        register_coco_instances('coco_2017_val_custom', metadata,
-                                test_json_annotations,
-                                test_image_dir)
+from detectron2.data import MetadataCatalog
+def register_all_coco(dataset_dir='datasets/coco2017'):
+    thing_classes = MetadataCatalog.get('coco_2017_train').thing_classes
+    metadata = {"thing_classes": thing_classes}
+    train_json_annotations = os.path.join(
+        dataset_dir, 'annotations', 'instances_train2017.json')
+    test_json_annotations = os.path.join(
+        dataset_dir, 'annotations', 'instances_val2017.json')
+    train_image_dir = os.path.join(dataset_dir, 'train2017')
+    test_image_dir = os.path.join(dataset_dir, 'val2017')
+    register_coco_instances('coco_2017_train_custom', metadata,
+                            train_json_annotations,
+                            train_image_dir)
+    register_coco_instances('coco_2017_val_custom', metadata,
+                            test_json_annotations,
+                            test_image_dir)
 
-    def register_coco_ood_wrt_bdd(dataset_dir='/nobackup-slow/dataset/my_xfdu/coco2017'):
-        thing_classes = MetadataCatalog.get('coco_2017_train').thing_classes
-        metadata = {"thing_classes": thing_classes}
+def register_coco_ood_wrt_bdd(dataset_dir='datasets/coco2017'):
+    thing_classes = MetadataCatalog.get('coco_2017_train').thing_classes
+    metadata = {"thing_classes": thing_classes}
 
-        test_json_annotations = os.path.join(
-            dataset_dir, 'annotations', 'instances_val2017_ood_wrt_bdd.json')
-        test_image_dir = os.path.join(dataset_dir, 'val2017')
+    test_json_annotations = os.path.join(
+        dataset_dir, 'annotations', 'instances_val2017_ood_wrt_bdd.json')
+    test_image_dir = os.path.join(dataset_dir, 'val2017')
 
-        register_coco_instances('coco_2017_val_ood_wrt_bdd', metadata,
-                                test_json_annotations,
-                                test_image_dir)
+    register_coco_instances('coco_2017_val_ood_wrt_bdd', metadata,
+                            test_json_annotations,
+                            test_image_dir)
 
 

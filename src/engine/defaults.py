@@ -35,7 +35,8 @@ from collections import OrderedDict
 from ..data import build_detection_train_loader #, PairDataLoader, PairFixDataLoader, PairAllDataLoader, PairMultirandomDataLoader, PairDataIntervalLoader
 # from detectron2.evaluation.evaluator import inference_on_dataset
 # from .evaluator import inference_on_dataset
-
+#from ..modeling import build_backbone
+from ..modeling import meta_arch
 __all__ = ["default_argument_parser", "DefaultTrainer"]
 
 
