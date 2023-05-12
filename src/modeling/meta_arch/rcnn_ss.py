@@ -86,6 +86,7 @@ class SSRCNN(nn.Module):
         if not self.training:
 
             return self.inference_my(batched_inputs)
+        print("here training portion running.............")
         losses = {}
         accuracies = {}
         # torch.save(batched_inputs, "inputs.pt")

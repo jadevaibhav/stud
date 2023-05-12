@@ -81,6 +81,7 @@ class MyVisualizer(Visualizer):
             num_instances = len(boxes)
         # import ipdb;
         # ipdb.set_trace()
+        #print("labels text: ",self.metadata.get("thing_classes", None))
         labels = self._create_text_labels(labels, scores, self.metadata.get("thing_classes", None))
         # breakpoint()
         if labels is not None:

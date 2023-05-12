@@ -2,6 +2,7 @@ datasets/coco2017/
 datasets/bdd100k/
 models/
 checkpoints/
+vis/
 *.pyc
 *.ipynb
 *.ipynb_checkpoints

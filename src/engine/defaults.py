@@ -679,7 +679,7 @@ def visualize_inference(model, inputs, results, savedir, name, cfg, energy_thres
     labels = results.det_labels[0:max_boxes]
     scores = results.scores[0:max_boxes]
     # breakpoint()
-
+    #print("labels here....",labels)
     inter_feat = results.inter_feat[0:max_boxes]
     if energy_threshold:
         labels[(np.argwhere(
@@ -790,6 +790,11 @@ def inference_on_dataset(model, data_loader, evaluator, saved_address, visualize
                     )
             else:
                 break
+
+
+        for i in range(len(saved_ood_source)):
+            print("indi sizes_"+str(i),saved_ood_source[i].shape)
+        #print("saved ood source.....",len(saved_ood_source),type(saved_ood_source))
         # saved_file = open(saved_address, 'w')
         np.save(saved_address, saved_ood_source)
 

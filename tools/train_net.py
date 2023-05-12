@@ -23,7 +23,6 @@ from src.engine import default_argument_parser, DefaultTrainer
 #from src import modeling
 
 
-
 class Trainer(DefaultTrainer):
     """
     We use the "DefaultTrainer" which contains a number pre-defined logic for
