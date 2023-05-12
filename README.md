@@ -73,6 +73,13 @@ python3 datasets/bdd100k2coco.py -i datasets/bdd100k/labels/box_track_20/val/ -o
 python3 datasets/bdd100k2coco.py -i datasets/bdd100k/labels/box_track_20/train/ -o datasets/bdd100k/labels/track/bdd100k_mot_train_coco.json -m track
 ```
 
+2. Split the original videos into different domains (time of day). Run the following command:
+```python
+python3 -m datasets.domain_splits_bdd100k
+```
+This script will first extract the domain attributes from the BDD100K detection set and then map them to the tracking set sequences. 
+After the processing steps, you would see two additional folders `domain_splits` and `per_seq` under the `datasets/bdd100k/labels/box_track_20`. The domain splits of all attributes in BDD100K detection set can be found at `datasets/bdd100k/labels/domain_splits`.
+
 **COCO**
 
 Download COCO2017 dataset from the [official website](https://cocodataset.org/#home). 

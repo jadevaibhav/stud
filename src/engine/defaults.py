@@ -31,6 +31,7 @@ import argparse
 import logging
 import os
 from collections import OrderedDict
+import pickle
 
 from ..data import build_detection_train_loader #, PairDataLoader, PairFixDataLoader, PairAllDataLoader, PairMultirandomDataLoader, PairDataIntervalLoader
 # from detectron2.evaluation.evaluator import inference_on_dataset
@@ -792,11 +793,13 @@ def inference_on_dataset(model, data_loader, evaluator, saved_address, visualize
                 break
 
 
-        for i in range(len(saved_ood_source)):
-            print("indi sizes_"+str(i),saved_ood_source[i].shape)
+        #for i in range(len(saved_ood_source)):
+        #    print("indi sizes_"+str(i),saved_ood_source[i].shape)
         #print("saved ood source.....",len(saved_ood_source),type(saved_ood_source))
         # saved_file = open(saved_address, 'w')
-        np.save(saved_address, saved_ood_source)
+        #np.save(saved_address, saved_ood_source)
+        with open(saved_address,'wb') as f:
+            pickle.dump(saved_ood_source,f)
 
     # Measure the time only for this worker (before the synchronization barrier)
     total_time = time.perf_counter() - start_time

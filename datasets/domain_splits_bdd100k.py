@@ -235,7 +235,7 @@ def convert_videos(
 
 def main() -> None:
     """Main function."""
-    bdd100k_path = "/nobackup/dataset/my_xfdu/video/bdd/bdd100k/labels"
+    bdd100k_path = "datasets/bdd100k/labels"
     # These labels should be in BDD100K format.
     bdd100k_val_labels = load_json(
         osp.join(bdd100k_path, "det_20", "det_val.json")
@@ -253,7 +253,7 @@ def main() -> None:
     )
 
     # process video data
-    video_path = "/nobackup/dataset/my_xfdu/video/bdd/bdd100k/labels/box_track_20"
+    video_path = "datasets/bdd100k/labels/box_track_20"
     convert_videos(val_maps, video_path, "val")
     convert_videos(train_maps, video_path, "train")
 
