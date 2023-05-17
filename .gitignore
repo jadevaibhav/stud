@@ -3,6 +3,9 @@ datasets/bdd100k/
 models/
 checkpoints/
 vis/
+vis_ood_coco/
+vis_coco/
+esmart-ai-datasets
 *.pyc
 *.ipynb
 *.ipynb_checkpoints
