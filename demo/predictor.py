@@ -23,7 +23,7 @@ class VisualizationDemo(object):
                 Useful since the visualization logic can be slow.
         """
         self.metadata = MetadataCatalog.get(
-            cfg.DATASETS.TEST[0] if len(cfg.DATASETS.TEST) else "__unused"
+            cfg.DATASETS.TRAIN[0] if len(cfg.DATASETS.TRAIN) else "__unused"
         )
         self.cpu_device = torch.device("cpu")
         self.instance_mode = instance_mode
@@ -48,7 +48,7 @@ class VisualizationDemo(object):
         predictions = self.predictor(image)
         # Convert image from OpenCV BGR format to Matplotlib RGB format.
         image = image[:, :, ::-1]
-        visualizer = MyVisualizer(image, self.metadata, instance_mode=self.instance_mode)
+        visualizer = MyVisualizer(image, self.metadata)
         # Visualizing max of 20 boxes
         max_boxes = 20
 
@@ -70,7 +70,7 @@ class VisualizationDemo(object):
                 inter_feat = instances.inter_feat[0:max_boxes]
                 if energy_threshold:
                     labels[(np.argwhere(
-                        torch.logsumexp(inter_feat[:, :-1], dim=1).cpu().data.numpy() < energy_threshold)).reshape(-1)] = 10
+                        torch.logsumexp(inter_feat[:, :-1], dim=1).cpu().data.numpy() < energy_threshold)).reshape(-1)] = 8
                 # # if name == '133631':
                 #     # breakpoint()
                 # # breakpoint()
