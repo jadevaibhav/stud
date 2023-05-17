@@ -31,20 +31,21 @@ to_np = lambda x: x.data.cpu().numpy()
 
 
 # ID data
-ood_data = np.load('/nobackup/my_xfdu/video/vis/checkpoints/VIS/' + str(args.model) + '/ood.npy',allow_pickle=True)
-id_data = np.load('/nobackup/my_xfdu/video/vis/checkpoints/VIS/' + str(args.model) + '/id.npy',allow_pickle=True)
+#ood_data = np.load('/nobackup/my_xfdu/video/vis/checkpoints/VIS/' + str(args.model) + '/ood.npy',allow_pickle=True)
+#id_data = np.load('/nobackup/my_xfdu/video/vis/checkpoints/VIS/' + str(args.model) + '/id.npy',allow_pickle=True)
+
 # id_data = pickle.load(open('./data/VOC-Detection/' + args.model + '/'+args.name+'/random_seed'+'_' +str(args.seed)  +'/inference/voc_custom_val/standard_nms/corruption_level_0/probabilistic_scoring_res_odd_'+str(args.thres)+'.pkl', 'rb'))
 # ood_data = pickle.load(open('./data/VOC-Detection/' + args.model + '/'+args.name+'/random_seed' +'_'+str(args.seed)  +'/inference/coco_ood_val/standard_nms/corruption_level_0/probabilistic_scoring_res_odd_'+str(args.thres)+'.pkl', 'rb'))
 # id_score = []
 # energy score calculation.
 # import ipdb; ipdb.set_trace()
-index = 0
-for data in id_data:
-    if index == 0:
-        id_data_all = data
-        index += 1
-    else:
-        id_data_all = np.concatenate([id_data_all, data], 0)
+#index = 0
+#for data in id_data:
+#    if index == 0:
+#        id_data_all = data
+#        index += 1
+#    else:
+#        id_data_all = np.concatenate([id_data_all, data], 0)
 
 id_data = torch.from_numpy(id_data_all)
 

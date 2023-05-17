@@ -768,7 +768,8 @@ def inference_on_dataset(model, data_loader, evaluator, saved_address, visualize
                                   savedir=savefigdir,
                                   name=str(inputs[0]['image_id']),
                                   cfg=cfg)
-                                 # energy_threshold=8.868)
+                                  #energy_threshold=8.868)
+                    
                 assert len(outputs) == 1
                 saved_ood_source.append(outputs[0]['instances'].inter_feat.cpu().data.numpy())
                 if torch.cuda.is_available():

@@ -36,7 +36,7 @@ class MyVisualizer(Visualizer):
             try:
                 labels = [class_names[i] for i in classes11]
             except:
-                breakpoint()
+                ArithmeticError()
         if scores is not None:
             if labels is None:
                 labels = ["{:.0f}%".format(s * 100) for s in scores]
