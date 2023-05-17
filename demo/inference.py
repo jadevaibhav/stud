@@ -13,7 +13,7 @@ import tqdm
 from detectron2.data.detection_utils import read_image
 from detectron2.utils.logger import setup_logger
 
-from predictor import VisualizationDemo
+from .predictor import VisualizationDemo
 from src.config import get_cfg
 # constants
 WINDOW_NAME = "COCO detections"
@@ -64,6 +64,12 @@ def get_parser():
         help="Minimum score for instance predictions to be shown",
     )
     parser.add_argument(
+        "--energy-threshold",
+        type=float,
+        default=8.868,
+        help="Energy threshold for categorizing OOD sample",
+    )
+    parser.add_argument(
         "--opts",
         help="Modify config options using the command-line 'KEY VALUE' pairs",
         default=[],
@@ -108,7 +114,7 @@ if __name__ == "__main__":
             # use PIL, to be consistent with evaluation
             img = read_image(path, format="BGR")
             start_time = time.time()
-            predictions, visualized_output = demo.run_on_image(img)
+            predictions, visualized_output = demo.run_on_image(img,args.energy_threshold)
             logger.info(
                 "{}: {} in {:.2f}s".format(
                     path,
@@ -185,3 +191,9 @@ if __name__ == "__main__":
             output_file.release()
         else:
             cv2.destroyAllWindows()
+
+
+
+
+# command line argument
+# python -m demo.inference --config-file ./configs/BDD100k/stud_resnet_ood_coco.yaml --input /home/vaibhav/Downloads/dataset-card.jpg --output /home/vaibhav/Downloads/demo.jpg  --opts  MODEL.WEIGHTS models/model_final_resnet_bdd.pth

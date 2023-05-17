@@ -5,11 +5,12 @@ import multiprocessing as mp
 from collections import deque
 import cv2
 import torch
+import numpy as np
 
 from detectron2.data import MetadataCatalog
 from detectron2.engine.defaults import DefaultPredictor
 from detectron2.utils.video_visualizer import VideoVisualizer
-from ..src.engine.myvisualizer import MyVisualizer,ColorMode, _SMALL_OBJECT_AREA_THRESH
+from src.engine.myvisualizer import MyVisualizer,ColorMode, _SMALL_OBJECT_AREA_THRESH
 
 
 class VisualizationDemo(object):
@@ -34,7 +35,7 @@ class VisualizationDemo(object):
         else:
             self.predictor = DefaultPredictor(cfg)
 
-    def run_on_image(self, image):
+    def run_on_image(self, image,energy_threshold=None):
         """
         Args:
             image (np.ndarray): an image of shape (H, W, C) (in BGR order).
@@ -48,6 +49,9 @@ class VisualizationDemo(object):
         # Convert image from OpenCV BGR format to Matplotlib RGB format.
         image = image[:, :, ::-1]
         visualizer = MyVisualizer(image, self.metadata, instance_mode=self.instance_mode)
+        # Visualizing max of 20 boxes
+        max_boxes = 20
+
         if "panoptic_seg" in predictions:
             panoptic_seg, segments_info = predictions["panoptic_seg"]
             vis_output = visualizer.draw_panoptic_seg_predictions(
@@ -56,11 +60,26 @@ class VisualizationDemo(object):
         else:
             if "sem_seg" in predictions:
                 vis_output = visualizer.draw_sem_seg(
-                    predictions["sem_seg"].argmax(dim=0).to(self.cpu_device)
+                    predictions["sem_seg"].argmax(dim=0).to(self.cpu_device).numpy()
                 )
             if "instances" in predictions:
-                instances = predictions["instances"].to(self.cpu_device)
-                vis_output = visualizer.draw_instance_predictions(predictions=instances)
+                instances = predictions["instances"]
+                predicted_boxes = instances.pred_boxes.tensor.cpu().numpy()
+                labels = instances.det_labels[0:max_boxes]
+                scores = instances.scores[0:max_boxes]
+                inter_feat = instances.inter_feat[0:max_boxes]
+                if energy_threshold:
+                    labels[(np.argwhere(
+                        torch.logsumexp(inter_feat[:, :-1], dim=1).cpu().data.numpy() < energy_threshold)).reshape(-1)] = 10
+                # # if name == '133631':
+                #     # breakpoint()
+                # # breakpoint()
+                if len(scores) == 0 or max(scores) <= 0.0:
+                    return
+                vis_output = visualizer.overlay_covariance_instances(labels=labels,
+                                                                    scores=scores,
+                                                                    boxes=predicted_boxes[0:max_boxes], covariance_matrices=None,
+                                                                    score_threshold = 0.0)
 
         return predictions, vis_output
 
