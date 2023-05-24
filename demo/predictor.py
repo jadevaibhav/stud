@@ -91,7 +91,7 @@ class VisualizationDemo(object):
             else:
                 break
 
-    def run_on_video(self, video):
+    def run_on_video(self, video,energy_threshold=None):
         """
         Visualizes predictions on frames of the input video.
         Args:
@@ -111,7 +111,7 @@ class VisualizationDemo(object):
                 )
             elif "instances" in predictions:
                 predictions = predictions["instances"].to(self.cpu_device)
-                vis_frame = video_visualizer.draw_instance_predictions_odd(frame, predictions)
+                vis_frame = video_visualizer.draw_instance_predictions_odd(frame, predictions,energy_threshold)
             elif "sem_seg" in predictions:
                 vis_frame = video_visualizer.draw_sem_seg(
                     frame, predictions["sem_seg"].argmax(dim=0).to(self.cpu_device)
