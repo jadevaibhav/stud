@@ -107,7 +107,7 @@ class MyVideoVisualizer(VideoVisualizer):
     
         if len(scores) == 0 or max(scores) <= 0.0:
             return
-        frame_visualizer = frame_visualizer.overlay_covariance_instances(
+        frame_visualizer.overlay_covariance_instances(
         labels=labels,
         scores=scores,
         boxes=predicted_boxes[0:max_boxes], covariance_matrices=None,

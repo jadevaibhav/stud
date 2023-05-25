@@ -9,7 +9,7 @@ import numpy as np
 
 from detectron2.data import MetadataCatalog
 from detectron2.engine.defaults import DefaultPredictor
-from detectron2.utils.video_visualizer import VideoVisualizer
+from src.engine.myvideovisualizer import MyVideoVisualizer
 from src.engine.myvisualizer import MyVisualizer,ColorMode, _SMALL_OBJECT_AREA_THRESH
 
 
@@ -100,7 +100,7 @@ class VisualizationDemo(object):
         Yields:
             ndarray: BGR visualizations of each video frame.
         """
-        video_visualizer = VideoVisualizer(self.metadata, self.instance_mode)
+        video_visualizer = MyVideoVisualizer(self.metadata, self.instance_mode)
 
         def process_predictions(frame, predictions):
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
