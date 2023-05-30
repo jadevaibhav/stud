@@ -10,3 +10,4 @@ esmart-ai-datasets
 *.pyc
 *.ipynb
 *.ipynb_checkpoints
+datasets/*.mp4

@@ -65,9 +65,9 @@ def get_parser():
     )
     parser.add_argument(
         "--energy-threshold",
-        
+        type=float,
         default=8.868,
-        help="Energy threshold for categorizing OOD sample",
+        help="Energy threshold for categorizing OOD sample, 0.0 for without OOD",
     )
     parser.add_argument(
         "--opts",
@@ -107,9 +107,9 @@ if __name__ == "__main__":
     demo = VisualizationDemo(cfg)
     if args.energy_threshold == 'None':
         args.energy_threshold = None
-    elif type(args.energy_threshold) == type(0.0):
+    else:
         args.energy_threshold = float(args.energy_threshold)
-        
+
     if args.input:
         if len(args.input) == 1:
             args.input = glob.glob(os.path.expanduser(args.input[0]))
@@ -118,7 +118,6 @@ if __name__ == "__main__":
             # use PIL, to be consistent with evaluation
             img = read_image(path, format="BGR")
             start_time = time.time()
-            en
             predictions, visualized_output = demo.run_on_image(img,args.energy_threshold)
             logger.info(
                 "{}: {} in {:.2f}s".format(

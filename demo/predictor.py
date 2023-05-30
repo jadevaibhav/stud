@@ -8,7 +8,7 @@ import torch
 import numpy as np
 
 from detectron2.data import MetadataCatalog
-from detectron2.engine.defaults import DefaultPredictor
+from src.engine.defaults import DefaultPredictor
 from src.engine.myvideovisualizer import MyVideoVisualizer
 from src.engine.myvisualizer import MyVisualizer,ColorMode, _SMALL_OBJECT_AREA_THRESH
 
