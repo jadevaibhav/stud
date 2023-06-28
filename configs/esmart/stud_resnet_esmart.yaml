@@ -7,7 +7,7 @@ MODEL:
     DEPTH: 50
   ROI_HEADS:
     NAME: "StandardROIHeadsSS"
-    NUM_CLASSES: 10
+    NUM_CLASSES: 12
   SS:
     FEAT_LEVEL: "res4"
     NAME: ["build_cycle_energy_direct_add_all_head"]
@@ -18,8 +18,7 @@ MODEL:
     FILTERING2: 0.6
     ENERGY_WEIGHT: 0.05
 DATASETS:
-  TRAIN: ("bdd_tracking_2k_train",)
-  TEST: ("coco_2017_val_ood_wrt_bdd", )
+  TRAIN: ("esmart_wip",)
 SOLVER:
   IMS_PER_BATCH: 1
 #   IMS_PER_BATCH: 16
@@ -28,7 +27,8 @@ SOLVER:
 #  MAX_ITER: 45500
   STEPS: (36000, 48000,)
   MAX_ITER: 52500
-  WARMUP_ITERS: 5000
+  WARMUP_ITERS: 2500
+  CHECKPOINT_PERIOD: 1000
 INPUT:
   MIN_SIZE_TRAIN: (800,)
   RANDOM_FLIP: "none"
@@ -37,6 +37,6 @@ INPUT:
 SEED: 34112225
 DATALOADER:
   SAMPLER_TRAIN: "PairTrainingMultiRandomSampler"
-  PAIR_OFFSET_RANGE: 9
+  PAIR_OFFSET_RANGE: 100
   SELCTED_NUMBER: 3
-OUTPUT_DIR: "checkpoints/bdd_tracking_2k/daytime/energy_no_original_loss_direct_add_frame_9_revise_4to6_multi_random_seed_refactor"
+OUTPUT_DIR: "checkpoints/esmart/trial"

@@ -86,7 +86,7 @@ class SSRCNN(nn.Module):
         if not self.training:
 
             return self.inference_my(batched_inputs)
-        print("here training portion running.............")
+        #print("here training portion running.............")
         losses = {}
         accuracies = {}
         # torch.save(batched_inputs, "inputs.pt")
@@ -115,11 +115,20 @@ class SSRCNN(nn.Module):
             gt_instances = None
         # print(images.tensor.size(), images.image_sizes)
         features = self.backbone(images.tensor)
+        for i in features.keys():
+            if torch.isnan(features[i]).sum() != 0 or torch.isnan(features[i]).sum() != 0:
+                print("...skipping this iteration due to NaN/inf features...")
+                return {}#{'ene_reg_loss': torch.tensor(0.0, device=self.device), 'loss_cls': torch.tensor(0.0, device=self.device),
+                         #'loss_box_reg': torch.tensor(0.0, device=self.device), 'loss_rpn_cls': torch.tensor(0.0, device=self.device), 
+                         #'loss_rpn_loc': torch.tensor(0.0, device=self.device)}
+
         # print(features['p2'].size(),features['p3'].size(), features['p4'].size(), features['p5'].size(), features['p6'].size())
         if self.proposal_generator:
+           
             proposals, proposal_losses = self.proposal_generator(
                 images, features, gt_instances
             )
+            
         else:
             assert "proposals" in batched_inputs[0]
             proposals = [
@@ -128,9 +137,11 @@ class SSRCNN(nn.Module):
             proposal_losses = {}
         # print(len(proposals), proposals[0])
 
+        
         _, detector_losses = self.roi_heads(
             images, features, proposals, gt_instances
         )
+        
         # breakpoint()
 
         if isinstance(detector_losses, tuple):
@@ -160,6 +171,7 @@ class SSRCNN(nn.Module):
                         if self.cfg.MODEL.SS.LOSS == 'normal':
                             # breakpoint()
                             # print(self.roi_heads.box_head)
+                           
                             fea_for_reg = self.roi_heads.box_head(fea_for_reg.view(-1, 256, 7, 7))
                             predictions = self.roi_heads.box_predictor(fea_for_reg)
                             binary_labels = torch.ones(len(predictions[0])).cuda()
@@ -168,7 +180,6 @@ class SSRCNN(nn.Module):
                                 torch.logsumexp(predictions[0][:, :-1], dim=1).unsqueeze(1)),
                                 binary_labels.long())
                             ene_loss = self.cfg.MODEL.SS.ENERGY_WEIGHT * energy_reg_loss
-
 
                         losses.update({'ene_reg_loss': ene_loss})
                         del binary_labels
@@ -185,7 +196,13 @@ class SSRCNN(nn.Module):
         losses.update(proposal_losses)
 
         for k, v in losses.items():
-            assert math.isnan(v) == False, k
+            #if math.isnan(v) == True:
+            #    v[torch.isnan(v)] = 0
+            #    losses[k] = v
+            if math.isnan(v) == True:
+                print("...skipping this iteration due to NaN/inf in loss: ",k )
+                print([i['file_name'] for i in batched_inputs])
+                return {}
 
         return losses
 
