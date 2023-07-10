@@ -37,6 +37,6 @@ INPUT:
 SEED: 34112225
 DATALOADER:
   SAMPLER_TRAIN: "PairTrainingMultiRandomSampler"
-  PAIR_OFFSET_RANGE: 9
+  PAIR_OFFSET_RANGE: 200
   SELCTED_NUMBER: 3
 OUTPUT_DIR: "checkpoints/esmart/trial_9_window"
