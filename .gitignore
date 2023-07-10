@@ -12,3 +12,6 @@ esmart-ai-datasets
 *.ipynb_checkpoints
 datasets/*.mp4
 datasets/esmart
+tmp*/
+pymp*/
+wandb/

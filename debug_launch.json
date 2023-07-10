@@ -52,5 +52,29 @@
                 "1"
             ]
         }
+        ,{
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "~/Desktop/stud/datasets/esmart/modify_labels.py",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Python: Module",
+            "type": "python",
+            "request": "launch",
+            "module": "tools.train_net",
+            "justMyCode": true,
+            "args": [
+                "--config-file",
+                "./configs/esmart/stud_resnet_esmart.yaml",
+                "--resume",
+                "--num-gpus",
+                "1",
+                "MODEL.WEIGHTS",
+                "models/model_final_resnet_bdd.pth"
+            ]
+        }
     ]
 }

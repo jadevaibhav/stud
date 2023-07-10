@@ -22,6 +22,7 @@ from src.config import get_cfg
 from src.engine import default_argument_parser, DefaultTrainer
 #from src import modeling
 
+import wandb
 
 class Trainer(DefaultTrainer):
     """
@@ -74,6 +75,10 @@ def main(args):
     # eval_only and eval_during_train are mainly used for jointly
     # training detection and self-supervised models.
     # breakpoint()
+
+    #wandb setup
+    wandb.init(project="intial-stud-run-esmart", name = cfg.OUTPUT_DIR.split('/')[-1])
+
     if args.eval_only:
         model = Trainer.build_model(cfg)
         DetectionCheckpointer(model, save_dir=cfg.OUTPUT_DIR).resume_or_load(
