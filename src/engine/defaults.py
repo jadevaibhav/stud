@@ -4,11 +4,14 @@ import torch
 from fvcore.common.file_io import PathManager
 from fvcore.nn.precise_bn import get_bn_modules
 from torch.nn.parallel import DistributedDataParallel
+from PIL import Image
+from typing import List, Mapping, Optional
+import torchvision
 
 import detectron2.data.transforms as T
 from detectron2.checkpoint import DetectionCheckpointer
 from detectron2.data import MetadataCatalog, build_detection_test_loader
-from detectron2.engine import SimpleTrainer, hooks
+from detectron2.engine import SimpleTrainer, AMPTrainer,hooks
 from detectron2.evaluation import (
     DatasetEvaluator,
     print_csv_format,
@@ -24,6 +27,7 @@ from detectron2.utils.events import (
     CommonMetricPrinter,
     JSONWriter,
     TensorboardXWriter,
+    get_event_storage
 )
 from detectron2.utils.logger import setup_logger
 
@@ -38,7 +42,6 @@ from ..data import build_detection_train_loader #, PairDataLoader, PairFixDataLo
 # from .evaluator import inference_on_dataset
 #from ..modeling import build_backbone
 from ..modeling import meta_arch
-
 import wandb
 
 __all__ = ["default_argument_parser", "DefaultTrainer"]
@@ -232,7 +235,7 @@ class DefaultPredictor:
             return predictions
 
 
-class DefaultTrainer(SimpleTrainer):
+class DefaultTrainer(AMPTrainer):
     """
     A trainer with default training logic.
     It is a subclass of :class:`SimpleTrainer` and instantiates everything needed from the
@@ -325,6 +328,7 @@ class DefaultTrainer(SimpleTrainer):
         self.cfg = cfg
 
         self.register_hooks(self.build_hooks())
+        super().__init__(self,self.model,self.data_loader,self.optimizer)
 
     def resume_or_load(self, resume=True):
         """
@@ -441,48 +445,65 @@ class DefaultTrainer(SimpleTrainer):
             ), "No evaluation results obtained during training!"
             verify_results(self.cfg, self._last_eval_results)
             return self._last_eval_results
-        
+    
     def run_step(self):
         """
-        Implement the standard training logic described above.
+        Implement the AMP training logic.
         """
-        assert self.model.training, "[SimpleTrainer] model was changed to eval mode!"
+        assert self.model.training, "[AMPTrainer] model was changed to eval mode!"
+        assert torch.cuda.is_available(), "[AMPTrainer] CUDA is required for AMP training!"
+        from torch.cuda.amp import autocast
+        #print("AMPTrainer run step running....")
         start = time.perf_counter()
-        """
-        If you want to do something with the data, you can wrap the dataloader.
-        """
         data = next(self._data_loader_iter)
         data_time = time.perf_counter() - start
 
-        """
-        If you want to do something with the losses, you can wrap the model.
-        """
-        loss_dict = self.model(data)
-        if isinstance(loss_dict, torch.Tensor):
-            losses = loss_dict
-            loss_dict = {"total_loss": loss_dict}
-        else:
-            if loss_dict == {}:
-                return 
-            else:
-                losses = sum(loss_dict.values())
+        def create_mosaic(data,path):
+                mosaic_size = (1600,1600)
+                tile_size = (800,800)
+                mosaic = Image.new('RGB', mosaic_size, (255, 255, 255))
 
-        """
-        If you need to accumulate gradients or do something similar, you can
-        wrap the optimizer with your custom `zero_grad()` method.
-        """
+                def resize(image,size):
+                    return torchvision.transforms.Resize(size)(image).permute(1,2,0).detach().cpu().numpy()
+
+                for y in range(2):
+                    for x in range(2):
+                        # Get the current tile's top-left position
+                        tile_position = (x * tile_size[0], y * tile_size[1])
+
+                        #  resize it, and paste it onto the mosaic
+                        tile_image = resize(data[2*x+y]["image"], tile_size)
+                        tile_image = Image.fromarray(tile_image)
+                        mosaic.paste(tile_image, tile_position)
+                
+                # logging images for visulization
+                mosaic.save(path)
+                img = wandb.Image(mosaic,caption="training_data_iter_"+str(self.iter)+".jpg")
+                wandb.log({"examples":img})
+
+        if self.iter%100 == 0:
+            create_mosaic(data,path=os.path.join(self.cfg.OUTPUT_DIR,"training_data_iter_"+str(self.iter)+".jpg"))
+
+        with autocast():
+            loss_dict = self.model(data)
+            if isinstance(loss_dict, torch.Tensor):
+                losses = loss_dict
+                loss_dict = {"total_loss": loss_dict}
+            else:
+                if loss_dict == {}:
+                    self.optimizer.zero_grad()
+                    return 
+                else:
+                    losses = sum(loss_dict.values())
+
         self.optimizer.zero_grad()
-        losses.backward()
+        self.grad_scaler.scale(losses).backward()
 
         self._write_metrics(loss_dict, data_time)
-        wandb.log(loss_dict)
-
-        """
-        If you need gradient clipping/scaling or other processing, you can
-        wrap the optimizer with your custom `step()` method. But it is
-        suboptimal as explained in https://arxiv.org/abs/2006.15704 Sec 3.2.4
-        """
-        self.optimizer.step()
+        #wandb.log(loss_dict)
+        #print("logging here....")
+        self.grad_scaler.step(self.optimizer)
+        self.grad_scaler.update()
 
     @classmethod
     def build_model(cls, cfg):
@@ -686,6 +707,122 @@ Alternatively, you can call evaluation functions yourself (see Colab balloon tut
         if frozen:
             cfg.freeze()
         return cfg
+
+class DefaultAMPTrainer(DefaultTrainer,AMPTrainer):
+    
+    def __init__(self, cfg):
+        super().__init__(cfg)
+        AMPTrainer.__init__(self,self.model,self.data_loader,self.optimizer)
+
+    def run_step(self):
+        """
+        Implement the AMP training logic.
+        """
+        assert self.model.training, "[AMPTrainer] model was changed to eval mode!"
+        assert torch.cuda.is_available(), "[AMPTrainer] CUDA is required for AMP training!"
+        from torch.cuda.amp import autocast
+        #print("AMPTrainer run step running....")
+        start = time.perf_counter()
+        data = next(self._data_loader_iter)
+        data_time = time.perf_counter() - start
+
+        def create_mosaic(data,path):
+            mosaic_size = (1600,1600)
+            tile_size = (800,800)
+            mosaic = Image.new('RGB', mosaic_size, (255, 255, 255))
+
+            def resize(image,size):
+                return torchvision.transforms.Resize(size)(image).permute(1,2,0).detach().cpu().numpy()
+
+            for y in range(2):
+                for x in range(2):
+                    # Get the current tile's top-left position
+                    tile_position = (x * tile_size[0], y * tile_size[1])
+
+                    #  resize it, and paste it onto the mosaic
+                    tile_image = resize(data[2*x+y]["image"], tile_size)
+                    tile_image = Image.fromarray(tile_image)
+                    mosaic.paste(tile_image, tile_position)
+            
+            # logging images for visulization
+            mosaic.save(path)
+            img = wandb.Image(mosaic,caption="training_data_iter_"+str(self.iter)+".jpg")
+            wandb.log({"examples":img})
+
+        if self.iter%100 == 0:
+            create_mosaic(data,path=os.path.join(self.cfg.OUTPUT_DIR,"training_data_iter_"+str(self.iter)+".jpg"))
+
+        with autocast():
+            loss_dict = self.model(data)
+            if isinstance(loss_dict, torch.Tensor):
+                losses = loss_dict
+                loss_dict = {"total_loss": loss_dict}
+            else:
+                if loss_dict == {}:
+                    self.optimizer.zero_grad()
+                    return 
+                else:
+                    losses = sum(loss_dict.values())
+
+        self.optimizer.zero_grad()
+        self.grad_scaler.scale(losses).backward()
+
+        self._write_metrics(loss_dict, data_time)
+        wandb.log(loss_dict)
+        #print("logging here....")
+        self.grad_scaler.step(self.optimizer)
+        self.grad_scaler.update()
+
+    def _write_metrics(
+        self,
+        loss_dict: Mapping[str, torch.Tensor],
+        data_time: float,
+        prefix: str = "",
+    ) -> None:
+        DefaultAMPTrainer.write_metrics(loss_dict, data_time, prefix)
+
+    @staticmethod
+    def write_metrics(
+        loss_dict: Mapping[str, torch.Tensor],
+        data_time: float,
+        prefix: str = "",
+    ) -> None:
+        """
+        Args:
+            loss_dict (dict): dict of scalar losses
+            data_time (float): time taken by the dataloader iteration
+            prefix (str): prefix for logging keys
+        """
+        metrics_dict = {k: v.detach().cpu().item() for k, v in loss_dict.items()}
+        metrics_dict["data_time"] = data_time
+
+        # Gather metrics among all workers for logging
+        # This assumes we do DDP-style training, which is currently the only
+        # supported method in detectron2.
+        all_metrics_dict = comm.gather(metrics_dict)
+
+        if comm.is_main_process():
+            storage = get_event_storage()
+
+            # data_time among workers can have high variance. The actual latency
+            # caused by data_time is the maximum among workers.
+            data_time = np.max([x.pop("data_time") for x in all_metrics_dict])
+            storage.put_scalar("data_time", data_time)
+
+            # average the rest metrics
+            metrics_dict = {
+                k: np.mean([x[k] for x in all_metrics_dict]) for k in all_metrics_dict[0].keys()
+            }
+            total_losses_reduced = sum(metrics_dict.values())
+            if not np.isfinite(total_losses_reduced):
+                raise FloatingPointError(
+                    f"Loss became infinite or NaN at iteration={storage.iter}!\n"
+                    f"loss_dict = {metrics_dict}"
+                )
+
+            storage.put_scalar("{}total_loss".format(prefix), total_losses_reduced)
+            if len(metrics_dict) > 1:
+                storage.put_scalars(**metrics_dict)
 
 def visualize_inference(model, inputs, results, savedir, name, cfg, energy_threshold=None):
     """

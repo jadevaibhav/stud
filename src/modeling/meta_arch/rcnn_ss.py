@@ -199,6 +199,10 @@ class SSRCNN(nn.Module):
             #if math.isnan(v) == True:
             #    v[torch.isnan(v)] = 0
             #    losses[k] = v
+            #try:
+            #    assert math.isnan(v) == False, k
+            #except AssertionError:
+            #    pass
             if math.isnan(v) == True:
                 print("...skipping this iteration due to NaN/inf in loss: ",k )
                 print([i['file_name'] for i in batched_inputs])

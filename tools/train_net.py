@@ -19,12 +19,12 @@ from detectron2.evaluation import (
 # updated code
 from src.config import get_cfg
 #from src import data
-from src.engine import default_argument_parser, DefaultTrainer
+from src.engine import default_argument_parser, DefaultTrainer, DefaultAMPTrainer
 #from src import modeling
 
 import wandb
 
-class Trainer(DefaultTrainer):
+class Trainer(DefaultAMPTrainer):
     """
     We use the "DefaultTrainer" which contains a number pre-defined logic for
     standard training workflow. They may not work for you, especially if you
