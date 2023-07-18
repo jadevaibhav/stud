@@ -1,13 +1,19 @@
 _BASE_: "../Base-RCNN-FPN.yaml"
 MODEL:
+  PIXEL_STD: [57.375, 57.120, 58.395]
+  BACKBONE:
+    NAME: "build_regnetx_fpn_backbone"
+  WEIGHTS: "RegNetX-4.0GF_dds_8gpu.pyth" #"regnetx_detectron2.pth"
   META_ARCHITECTURE: "SSRCNN"
-  WEIGHTS: "detectron2://ImageNetPretrained/MSRA/R-50.pkl"
+#  WEIGHTS: "detectron2://ImageNetPretrained/MSRA/R-50.pkl"
   MASK_ON: False
   RESNETS:
     DEPTH: 50
   ROI_HEADS:
     NAME: "StandardROIHeadsSS"
     NUM_CLASSES: 12
+  FPN:
+    IN_FEATURES: [ "s1", "s2", "s3", "s4" ]
   SS:
     FEAT_LEVEL: "res4"
     NAME: ["build_cycle_energy_direct_add_all_head"]
@@ -25,9 +31,9 @@ SOLVER:
   BASE_LR: 0.02
 #  STEPS: (31200, 41600,)
 #  MAX_ITER: 45500
-  STEPS: (3600, 4800,)
-  MAX_ITER: 8500
-  WARMUP_ITERS: 800
+  STEPS: (36000, 48000,)
+  MAX_ITER: 52500
+  WARMUP_ITERS: 2500
   CHECKPOINT_PERIOD: 1000
 INPUT:
   MIN_SIZE_TRAIN: (800,)
@@ -37,6 +43,6 @@ INPUT:
 SEED: 34112225
 DATALOADER:
   SAMPLER_TRAIN: "PairTrainingMultiRandomSampler"
-  PAIR_OFFSET_RANGE: 200
+  PAIR_OFFSET_RANGE: 100
   SELCTED_NUMBER: 3
-OUTPUT_DIR: "checkpoints/esmart/trial_9_window_amp_logging"
+OUTPUT_DIR: "checkpoints/esmart/regnet/regnet_trial_9_window_amp"
