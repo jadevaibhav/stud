@@ -24,7 +24,7 @@ from src.engine import default_argument_parser, DefaultTrainer, DefaultAMPTraine
 
 import wandb
 
-class Trainer(DefaultAMPTrainer):
+class Trainer(DefaultTrainer):
     """
     We use the "DefaultTrainer" which contains a number pre-defined logic for
     standard training workflow. They may not work for you, especially if you
@@ -77,8 +77,10 @@ def main(args):
     # breakpoint()
 
     #wandb setup
-    wandb.init(project="intial-stud-run-esmart", name = cfg.OUTPUT_DIR.split('/')[-1])
-
+    wandb.init(project="intial-stud-run-esmart", name = cfg.OUTPUT_DIR.split('/')[-1],
+               #config = args.config_file
+               )
+    
     if args.eval_only:
         model = Trainer.build_model(cfg)
         DetectionCheckpointer(model, save_dir=cfg.OUTPUT_DIR).resume_or_load(

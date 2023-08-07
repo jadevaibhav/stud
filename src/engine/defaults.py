@@ -7,6 +7,7 @@ from torch.nn.parallel import DistributedDataParallel
 from PIL import Image
 from typing import List, Mapping, Optional
 import torchvision
+from torch.nn.parallel import DataParallel, DistributedDataParallel
 
 import detectron2.data.transforms as T
 from detectron2.checkpoint import DetectionCheckpointer
@@ -44,7 +45,7 @@ from ..data import build_detection_train_loader #, PairDataLoader, PairFixDataLo
 from ..modeling import meta_arch
 import wandb
 
-__all__ = ["default_argument_parser", "DefaultTrainer"]
+__all__ = ["default_argument_parser", "DefaultTrainer","DefaultAMPTrainer"]
 
 
 def default_argument_parser():
@@ -235,7 +236,7 @@ class DefaultPredictor:
             return predictions
 
 
-class DefaultTrainer(AMPTrainer):
+class DefaultTrainer(SimpleTrainer):
     """
     A trainer with default training logic.
     It is a subclass of :class:`SimpleTrainer` and instantiates everything needed from the
@@ -313,6 +314,17 @@ class DefaultTrainer(AMPTrainer):
                 )
         super().__init__(model, data_loader, optimizer)
 
+        unsupported = "AMPTrainer does not support single-process multi-device training!"
+        if isinstance(model, DistributedDataParallel):
+            assert not (model.device_ids and len(model.device_ids) > 1), unsupported
+        assert not isinstance(model, DataParallel), unsupported
+
+        #if grad_scaler is None:
+        from torch.cuda.amp import GradScaler
+
+        grad_scaler = GradScaler()
+        self.grad_scaler = grad_scaler
+
         self.scheduler = self.build_lr_scheduler(cfg, optimizer)
         # Assume no other objects need to be checkpointed.
         # We can later make it checkpoint the stateful hooks
@@ -328,8 +340,67 @@ class DefaultTrainer(AMPTrainer):
         self.cfg = cfg
 
         self.register_hooks(self.build_hooks())
-        super().__init__(self,self.model,self.data_loader,self.optimizer)
+    
+    def run_step(self):
+        """
+        Implement the AMP training logic.
+        """
+        assert self.model.training, "[AMPTrainer] model was changed to eval mode!"
+        assert torch.cuda.is_available(), "[AMPTrainer] CUDA is required for AMP training!"
+        from torch.cuda.amp import autocast
+        #print("AMPTrainer run step running....")
+        start = time.perf_counter()
+        data = next(self._data_loader_iter)
+        data_time = time.perf_counter() - start
 
+        def create_mosaic(data,path):
+            mosaic_size = (1600,1600)
+            tile_size = (800,800)
+            mosaic = Image.new('RGB', mosaic_size, (255, 255, 255))
+
+            def resize(image,size):
+                return torchvision.transforms.Resize(size)(image).permute(1,2,0).detach().cpu().numpy()
+
+            for y in range(2):
+                for x in range(2):
+                    # Get the current tile's top-left position
+                    tile_position = (x * tile_size[0], y * tile_size[1])
+
+                    #  resize it, and paste it onto the mosaic
+                    tile_image = resize(data[2*x+y]["image"], tile_size)
+                    tile_image = Image.fromarray(tile_image)
+                    mosaic.paste(tile_image, tile_position)
+            
+            # logging images for visulization
+            mosaic.save(path)
+            img = wandb.Image(mosaic,caption="training_data_iter_"+str(self.iter)+".jpg")
+            wandb.log({"examples":img})
+
+        if self.iter%1000 == 0:
+            create_mosaic(data,path=os.path.join(self.cfg.OUTPUT_DIR,"training_data_iter_"+str(self.iter)+".jpg"))
+
+        with autocast():
+            loss_dict = self.model(data)
+            if isinstance(loss_dict, torch.Tensor):
+                losses = loss_dict
+                loss_dict = {"total_loss": loss_dict}
+            else:
+                if loss_dict == {}:
+                    self.optimizer.zero_grad()
+                    return 
+                else:
+                    losses = sum(loss_dict.values())
+
+        self.optimizer.zero_grad()
+        self.grad_scaler.scale(losses).backward()
+
+        self._write_metrics(loss_dict, data_time)
+        wandb.log(loss_dict)
+        #print("logging here....")
+        self.grad_scaler.step(self.optimizer)
+        self.grad_scaler.update()
+
+   
     def resume_or_load(self, resume=True):
         """
         If `resume==True`, and last checkpoint exists, resume from it, load all checkpointables
@@ -446,64 +517,6 @@ class DefaultTrainer(AMPTrainer):
             verify_results(self.cfg, self._last_eval_results)
             return self._last_eval_results
     
-    def run_step(self):
-        """
-        Implement the AMP training logic.
-        """
-        assert self.model.training, "[AMPTrainer] model was changed to eval mode!"
-        assert torch.cuda.is_available(), "[AMPTrainer] CUDA is required for AMP training!"
-        from torch.cuda.amp import autocast
-        #print("AMPTrainer run step running....")
-        start = time.perf_counter()
-        data = next(self._data_loader_iter)
-        data_time = time.perf_counter() - start
-
-        def create_mosaic(data,path):
-                mosaic_size = (1600,1600)
-                tile_size = (800,800)
-                mosaic = Image.new('RGB', mosaic_size, (255, 255, 255))
-
-                def resize(image,size):
-                    return torchvision.transforms.Resize(size)(image).permute(1,2,0).detach().cpu().numpy()
-
-                for y in range(2):
-                    for x in range(2):
-                        # Get the current tile's top-left position
-                        tile_position = (x * tile_size[0], y * tile_size[1])
-
-                        #  resize it, and paste it onto the mosaic
-                        tile_image = resize(data[2*x+y]["image"], tile_size)
-                        tile_image = Image.fromarray(tile_image)
-                        mosaic.paste(tile_image, tile_position)
-                
-                # logging images for visulization
-                mosaic.save(path)
-                img = wandb.Image(mosaic,caption="training_data_iter_"+str(self.iter)+".jpg")
-                wandb.log({"examples":img})
-
-        if self.iter%100 == 0:
-            create_mosaic(data,path=os.path.join(self.cfg.OUTPUT_DIR,"training_data_iter_"+str(self.iter)+".jpg"))
-
-        with autocast():
-            loss_dict = self.model(data)
-            if isinstance(loss_dict, torch.Tensor):
-                losses = loss_dict
-                loss_dict = {"total_loss": loss_dict}
-            else:
-                if loss_dict == {}:
-                    self.optimizer.zero_grad()
-                    return 
-                else:
-                    losses = sum(loss_dict.values())
-
-        self.optimizer.zero_grad()
-        self.grad_scaler.scale(losses).backward()
-
-        self._write_metrics(loss_dict, data_time)
-        #wandb.log(loss_dict)
-        #print("logging here....")
-        self.grad_scaler.step(self.optimizer)
-        self.grad_scaler.update()
 
     @classmethod
     def build_model(cls, cfg):
@@ -713,7 +726,13 @@ class DefaultAMPTrainer(DefaultTrainer,AMPTrainer):
     def __init__(self, cfg):
         super().__init__(cfg)
         AMPTrainer.__init__(self,self.model,self.data_loader,self.optimizer)
-
+        print("order of MRO:",DefaultAMPTrainer.mro())
+        '''
+        [<class 'src.engine.defaults.DefaultAMPTrainer'>, <class 'src.engine.defaults.DefaultTrainer'>,
+         <class 'detectron2.engine.train_loop.AMPTrainer'>, <class 'detectron2.engine.train_loop.SimpleTrainer'>, 
+         <class 'detectron2.engine.train_loop.TrainerBase'>, <class 'object'>]
+        '''
+    
     def run_step(self):
         """
         Implement the AMP training logic.
