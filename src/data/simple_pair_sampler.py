@@ -33,6 +33,7 @@ class PairSimpleTrainingSampler(Sampler):
                 among workers (require synchronization among all workers).
         """
         self._offset = cfg.DATALOADER.PAIR_OFFSET_RANGE
+        self._select = cfg.DATALOADER.SELCTED_NUMBER
 
         self._shuffle = shuffle
         if seed is None:
@@ -41,6 +42,7 @@ class PairSimpleTrainingSampler(Sampler):
         # only sample the previous frame during eval
 
         self._rank = comm.get_rank()
+        self.save = []
         self._world_size = comm.get_world_size()
 
         self._total_size = len(dataset_dicts)
@@ -76,13 +78,12 @@ class PairSimpleTrainingSampler(Sampler):
                     vid_id = self._dataset_dicts[c]["video_id"]
                     index = self._dataset_dicts[c]["index"]
                     pair_ids = self._data_by_video[vid_id].keys()
-                    pair_ids.sort(
-
-                         
-                    )
-                    pair_idx = index 
-                    pair = self._data_by_video[vid_id][pair_idx]
-                    pairs.append(pair["total_idx"])
+                    pair_ids.sort()
+                    idx = pair_idx.index(index)
+                    pair_idx = pair_idx[idx-self._select//2:idx+self._select//2 + 2]
+                    for temp in pair_idx:
+                        pair = self._data_by_video[vid_id][temp]
+                        pairs.append(pair["total_idx"])
                 yield pairs
 
     def _infinite_indices(self):
