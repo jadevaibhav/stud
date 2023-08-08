@@ -1,0 +1,17 @@
+datasets/coco2017/
+datasets/bdd100k/
+models/
+checkpoints/
+vis/
+vis_ood_coco/
+vis_coco/
+.vscode/
+esmart-ai-datasets
+*.pyc
+*.ipynb
+*.ipynb_checkpoints
+datasets/*.mp4
+datasets/esmart
+tmp*/
+pymp*/
+wandb/
