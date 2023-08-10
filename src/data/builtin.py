@@ -96,6 +96,22 @@ if GPU==0:
                         os.path.join(root, 'labels_mod.json'),
                         os.path.join(root, 'data/'),
                     )
+        
+    def register_esmart_wip_subseq(root = "datasets/esmart/"):
+        things_classes = [
+                        "bicycle","bus","car","lane","lanes","motorcycle","person",
+                        "roadwork_tcd","speed_limit","stop sign", "traffic light",
+                        "truck"
+                          ]
+        name = 'esmart_wip_subseq'
+        metadata = {"thing_classes":things_classes}
+        register_coco_instances(
+                        name,
+                        metadata,
+                        os.path.join(root, 'labels_mod_subseq.json'),
+                        os.path.join(root, 'data/'),
+                    )
+
 
     def register_all_bdd_tracking(root="datasets/"):
         # bdd_tracking meta data

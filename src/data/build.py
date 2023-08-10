@@ -34,6 +34,7 @@ from .pair_fix_sampler import PairFixTrainingSampler, PairFixDataLoader
 from .pair_all_sampler import PairAllTrainingSampler, PairAllDataLoader
 from .pair_sampler_multi_random import PairTrainingMultiRandomSampler, PairMultirandomDataLoader
 from .pair_sampler_multi_interval import PairTrainingMultiIntervalSampler, PairDataIntervalLoader
+from .simple_pair_sampler  import PairSimpleTrainingSampler, PairSimpleDataLoader
 """
 This file contains the default logic to build a dataloader for training or testing.
 """
@@ -156,6 +157,16 @@ def build_detection_train_loader(cfg, mapper=None):
             worker_init_fn=worker_init_reset_seed,
         )
         return PairDataIntervalLoader(cfg, data_loader)
+    elif sampler_name == "PairSimpleTrainingSampler":
+        sampler = PairSimpleTrainingSampler(cfg, dataset_dicts, images_per_worker)
+        data_loader = torch.utils.data.DataLoader(
+            dataset,
+            num_workers=cfg.DATALOADER.NUM_WORKERS,
+            batch_sampler=sampler,
+            collate_fn=trivial_batch_collator,
+            worker_init_fn=worker_init_reset_seed,
+        )
+        return PairSimpleDataLoader(cfg, data_loader)
     else:
         raise ValueError("Unknown training sampler: {}".format(sampler_name))
     return build_batch_data_loader(
