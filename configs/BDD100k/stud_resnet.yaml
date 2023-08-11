@@ -2,6 +2,8 @@ _BASE_: "../Base-RCNN-FPN.yaml"
 MODEL:
   META_ARCHITECTURE: "SSRCNN"
   WEIGHTS: "detectron2://ImageNetPretrained/MSRA/R-50.pkl"
+  BACKBONE:
+    FREEZE_AT: 5
   MASK_ON: False
   RESNETS:
     DEPTH: 50
@@ -39,4 +41,4 @@ DATALOADER:
   SAMPLER_TRAIN: "PairTrainingMultiRandomSampler"
   PAIR_OFFSET_RANGE: 9
   SELCTED_NUMBER: 3
-OUTPUT_DIR: "/nobackup-slow/dataset/my_xfdu/video/bdd/bdd100k/checkpoints/bdd_tracking_2k/daytime/energy_no_original_loss_direct_add_frame_9_revise_4to6_multi_random_seed_refactor"
+OUTPUT_DIR: "checkpoints/bdd_tracking_2k/daytime/trial_bdd_run_scratch_freeze_backbone"
