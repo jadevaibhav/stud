@@ -314,7 +314,7 @@ class DefaultTrainer(SimpleTrainer):
                 )
         super().__init__(model, data_loader, optimizer)
 
-        unsupported = "AMPTrainer does not support single-process multi-device training!"
+        '''unsupported = "AMPTrainer does not support single-process multi-device training!"
         if isinstance(model, DistributedDataParallel):
             assert not (model.device_ids and len(model.device_ids) > 1), unsupported
         assert not isinstance(model, DataParallel), unsupported
@@ -324,6 +324,7 @@ class DefaultTrainer(SimpleTrainer):
 
         grad_scaler = GradScaler()
         self.grad_scaler = grad_scaler
+        '''
 
         self.scheduler = self.build_lr_scheduler(cfg, optimizer)
         # Assume no other objects need to be checkpointed.
@@ -340,7 +341,7 @@ class DefaultTrainer(SimpleTrainer):
         self.cfg = cfg
 
         self.register_hooks(self.build_hooks())
-    
+    '''
     def run_step(self):
         """
         Implement the AMP training logic.
@@ -399,7 +400,7 @@ class DefaultTrainer(SimpleTrainer):
         #print("logging here....")
         self.grad_scaler.step(self.optimizer)
         self.grad_scaler.update()
-
+    '''
    
     def resume_or_load(self, resume=True):
         """

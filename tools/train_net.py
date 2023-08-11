@@ -77,9 +77,9 @@ def main(args):
     # breakpoint()
 
     #wandb setup
-    wandb.init(project="intial-stud-run-esmart", name = cfg.OUTPUT_DIR.split('/')[-1],
+    #wandb.init(project="intial-stud-run-esmart", name = cfg.OUTPUT_DIR.split('/')[-1],
                #config = args.config_file
-               )
+    #           )
     
     if args.eval_only:
         model = Trainer.build_model(cfg)
