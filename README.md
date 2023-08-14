@@ -31,6 +31,9 @@ Checkout our similar ICLR'22 work [VOS](https://github.com/deeplearning-wisc/vos
 
 `pip3 install torch torchvision`
 
+`pip install torch==1.9.0+cu102 torchvision==0.10.0+cu102 torchaudio==0.9.0 -f https://download.pytorch.org/whl/torch_stable.html
+`
+
 Check out the previous Pytorch versions [here](https://pytorch.org/get-started/previous-versions/).
 
 - Install Detectron2
